@@ -1,0 +1,6 @@
+{
+  "name": "Voter Information Web Application",
+  "description": "A modern, responsive web application for searching and viewing voter information, automatically grouped by address with Google Sheets and Google Apps Script backend integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voter Information Portal | Brookside Municipality</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Simple smooth transitions */
+    .transition-all {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Main Banner Header -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 px-4 py-6 md:py-8 shadow-sm">
+    <div class="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="bg-sky-600/10 p-2 rounded-lg border border-sky-500/20 text-sky-400">
+            <i data-lucide="landmark" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              BROOKSIDE REGISTRY
+            </h1>
+            <p class="text-xs text-sky-300 font-medium tracking-wide uppercase">Voter Information Portal</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stats Summary Chips -->
+      <div class="flex items-center gap-3 self-start md:self-auto">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-lg px-4 py-2 flex items-center gap-3">
+          <div class="bg-emerald-500/10 p-1.5 rounded-md text-emerald-400">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <p class="text-[10px] text-slate-400 font-semibold uppercase leading-none">Total Voters</p>
+            <p id="stat-total-voters" class="text-sm font-bold text-white mt-1">0</p>
+          </div>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700 rounded-lg px-4 py-2 flex items-center gap-3">
+          <div class="bg-sky-500/10 p-1.5 rounded-md text-sky-400">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <p class="text-[10px] text-slate-400 font-semibold uppercase leading-none">Addresses</p>
+            <p id="stat-total-addresses" class="text-sm font-bold text-white mt-1">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
+    
+    <!-- Connection/Config bar -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex gap-3">
+        <div class="text-amber-600 mt-0.5">
+          <i data-lucide="cloud-lightning" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-amber-900">Database Connection Status</h2>
+          <p class="text-xs text-amber-700 mt-0.5" id="connection-status-text">
+            Using local sample demonstration database. Change to your Google Sheets API URL below.
+          </p>
+        </div>
+      </div>
+      <div class="w-full md:w-auto flex flex-col sm:flex-row gap-2">
+        <input type="text" id="api-url-input" placeholder="Paste Apps Script Web App URL" 
+               class="flex-1 px-3 py-1.5 text-xs bg-white border border-amber-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent min-w-[260px]">
+        <button id="save-api-btn" onclick="saveApiUrl()" 
+                class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center gap-2">
+          <i data-lucide="link" class="w-3.5 h-3.5"></i> Connect Sheet
+        </button>
+      </div>
+    </div>
+
+    <!-- Interactive Search Bar with Auto Suggestions -->
+    <div class="relative max-w-2xl mx-auto mb-10 z-30">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="search" class="w-5 h-5" id="search-icon"></i>
+          <div id="search-loading-spinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-sky-600 border-t-transparent"></div>
+        </div>
+        <input type="text" id="search-input" oninput="handleSearchInput()" onfocus="handleSearchFocus()" placeholder="Search by Voter ID or Full Name..." 
+               class="w-full bg-white text-slate-900 pl-11 pr-10 py-3.5 rounded-xl border border-slate-200 shadow-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all text-sm md:text-base">
+        <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <!-- Auto Suggestions Dropdown -->
+      <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden shrink-0">
+        <div class="p-2 border-b border-slate-50 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50/50">
+          Voter Suggestions
+        </div>
+        <ul id="suggestions-list" class="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+          <!-- Dynamically populated suggestions -->
+        </ul>
+      </div>
+    </div>
+
+    <!-- Active Search Result Details & Cards -->
+    <div id="search-result-container" class="hidden mb-12">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-6">
+        <div class="flex items-center gap-2 text-slate-900 font-bold">
+          <i data-lucide="fingerprint" class="w-5 h-5 text-sky-600"></i>
+          <h3>Voter Record Match</h3>
+        </div>
+        <button onclick="clearSearch()" class="text-xs text-sky-600 hover:text-sky-800 font-medium hover:underline">
+          Clear View
+        </button>
+      </div>
+
+      <div class="flex justify-center">
+        <!-- Official Identity Card Design -->
+        <div class="w-full max-w-xl bg-white border border-slate-200/80 rounded-2xl shadow-lg relative overflow-hidden backdrop-blur-sm">
+          <!-- Card Header Decor -->
+          <div class="h-2.5 bg-slate-900 w-full"></div>
+          
+          <div class="p-6 md:p-8">
+            <div class="flex justify-between items-start gap-4 pb-6 border-b border-slate-100 mb-6">
+              <div>
+                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200/50 uppercase tracking-wider mb-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active Registration
+                </span>
+                <h4 id="card-fullname" class="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Alexander Mercer</h4>
+                <p class="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                  <i data-lucide="map" class="w-3.5 h-3.5 text-slate-400"></i> Brookside Civic Registry
+                </p>
+              </div>
+              
+              <!-- Voter ID Badge -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-right shrink-0">
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider leading-none">VOTER ID</span>
+                <p id="card-voter-id" class="text-base font-bold font-mono text-slate-900 leading-none mt-1">V-10294</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-6">
+              <div>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase leading-none">Father's Name</p>
+                <p id="card-father" class="text-sm font-medium text-slate-800 mt-1.5">William Mercer</p>
+              </div>
+              
+              <div>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase leading-none">Mother's Name</p>
+                <p id="card-mother" class="text-sm font-medium text-slate-800 mt-1.5">Eleanor Mercer</p>
+              </div>
+
+              <div>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase leading-none">Date of Birth</p>
+                <p id="card-dob" class="text-sm font-medium text-slate-800 mt-1.5 leading-none">1985-04-12</p>
+              </div>
+
+              <div>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase leading-none">Mobile Contact</p>
+                <p id="card-mobile" class="text-sm font-mono font-medium text-slate-800 mt-1.5 leading-none">+1-555-0199</p>
+              </div>
+
+              <div class="md:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <p class="text-[10px] text-slate-400 font-bold uppercase leading-none flex items-center gap-1">
+                  <i data-lucide="map-pin" class="w-3 h-3 text-sky-500"></i> Registered Address
+                </p>
+                <p id="card-address" class="text-xs md:text-sm font-medium text-slate-800 mt-2 leading-relaxed">
+                  123 Maple Heights, Ward 4
+                </p>
+              </div>
+            </div>
+
+            <!-- Simulating barcode for aesthetics -->
+            <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div class="flex flex-col items-center sm:items-start">
+                <div class="h-6 w-44 bg-[repeating-linear-gradient(90deg,#0f172a,#0f172a_3px,white_3px,white_7px,#0f172a_7px,#0f172a_8px,white_8px,white_10px)] opacity-85"></div>
+                <span class="text-[8px] font-mono text-slate-400 tracking-widest mt-1">VOTER_ROLL_*10294*</span>
+              </div>
+              <div class="text-[10px] text-slate-400 text-center sm:text-right font-medium">
+                Issued by authority of Maplewood State Division
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Alert Banner -->
+    <div id="search-error-alert" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-4 max-w-xl mx-auto mb-10 flex gap-3 text-rose-800">
+      <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600 mt-0.5 shrink-0"></i>
+      <div>
+        <h4 class="text-sm font-bold text-rose-900">Voter Not Found</h4>
+        <p class="text-xs text-rose-700 mt-0.5">Please check your spelling or verify that you entered the correct Voter ID.</p>
+      </div>
+    </div>
+
+    <!-- Core Feature: Address Grouping Database Display -->
+    <div class="border-t border-slate-200 pt-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="layers" class="text-sky-600 w-5 h-5"></i> Address Groupings & Neighborhood Roll
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Automatically categorized layout of registered voters by address.</p>
+        </div>
+        <button onclick="syncData()" class="self-start sm:self-auto flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-700 font-bold bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Sync
+        </button>
+      </div>
+
+      <!-- Grid of Address Blocks -->
+      <div id="address-groups-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Dynamically populated address cards -->
+        <div class="col-span-full py-12 flex flex-col items-center text-slate-400">
+          <div class="animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-sky-600 mb-2"></div>
+          <span class="text-xs">Loading voter database layout...</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="bg-white border-t border-slate-100 py-6 text-center text-xs text-slate-400 mt-auto">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>&copy; 2026 Brookside Municipal Government Registry. All rights reserved.</p>
+      <div class="flex gap-4 font-semibold text-sky-600">
+        <a href="#top" class="hover:underline">Back to top</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App State & Logical Handling Script -->
+  <script>
+    // Live Offline Sample Demo Data as fallback
+    const MOCK_DATA = [
+      {
+        voterId: "V-10294",
+        fullName: "Alexander Mercer",
+        fatherName: "William Mercer",
+        motherName: "Eleanor Mercer",
+        dateOfBirth: "1985-04-12",
+        address: "123 Maple Heights, Ward 4",
+        mobileNumber: "+1-555-0199"
+      },
+      {
+        voterId: "V-10295",
+        fullName: "Sophia Mercer",
+        fatherName: "William Mercer",
+        motherName: "Eleanor Mercer",
+        dateOfBirth: "1989-11-22",
+        address: "123 Maple Heights, Ward 4",
+        mobileNumber: "+1-555-0201"
+      },
+      {
+        voterId: "V-10296",
+        fullName: "Thomas Mercer",
+        fatherName: "William Mercer",
+        motherName: "Eleanor Mercer",
+        dateOfBirth: "1994-01-15",
+        address: "123 Maple Heights, Ward 4",
+        mobileNumber: "+1-555-0205"
+      },
+      {
+        voterId: "V-30485",
+        fullName: "Marcus Cole",
+        fatherName: "Arthur Cole",
+        motherName: "Martha Cole",
+        dateOfBirth: "1992-07-09",
+        address: "78 Pine Road, Sector-1",
+        mobileNumber: "+1-555-0433"
+      },
+      {
+        voterId: "V-30486",
+        fullName: "Clara Cole",
+        fatherName: "Arthur Cole",
+        motherName: "Martha Cole",
+        dateOfBirth: "1995-12-04",
+        address: "78 Pine Road, Sector-1",
+        mobileNumber: "+1-555-0435"
+      },
+      {
+        voterId: "V-50211",
+        fullName: "Elena Ramos",
+        fatherName: "David Ramos",
+        motherName: "Isabel Ramos",
+        dateOfBirth: "1978-08-30",
+        address: "456 Oak Avenue, Ward 4",
+        mobileNumber: "+1-555-0812"
+      }
+    ];
+
+    // Reactive State
+    let votersList = [];
+    let isLiveBackend = false;
+
+    // Load Local Store URL on initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      // Initialize Lucide Icons
+      lucide.createIcons();
+      
+      const storedUrl = localStorage.getItem('voter_api_url') || "";
+      document.getElementById('api-url-input').value = storedUrl;
+      
+      loadData();
+    });
+
+    // Save and Configure Sheet Endpoint URL
+    function saveApiUrl() {
+      const urlInput = document.getElementById('api-url-input').value.trim();
+      if (urlInput) {
+        localStorage.setItem('voter_api_url', urlInput);
+      } else {
+        localStorage.removeItem('voter_api_url');
+      }
+      loadData();
+    }
+
+    // Toggle Loading Animation
+    function setLoading(isLoading) {
+      const spinner = document.getElementById('search-loading-spinner');
+      const icon = document.getElementById('search-icon');
+      if (isLoading) {
+        spinner.classList.remove('hidden');
+        icon.classList.add('hidden');
+      } else {
+        spinner.classList.add('hidden');
+        icon.classList.remove('hidden');
+      }
+    }
+
+    // Load Live or Local Demo Data
+    async function loadData() {
+      const apiUrl = localStorage.getItem('voter_api_url') || "";
+      const statusText = document.getElementById('connection-status-text');
+      
+      if (apiUrl) {
+        setLoading(true);
+        try {
+          const resp = await fetch(apiUrl);
+          const result = await resp.json();
+          
+          if (result.success && Array.isArray(result.data)) {
+            votersList = result.data;
+            isLiveBackend = true;
+            statusText.innerHTML = `<span class="text-emerald-700 font-bold flex items-center gap-1">🟢 Connected Live Sheets API</span> (Loaded ${votersList.length} voters automatically from your Spreadsheet)`;
+            statusText.className = "text-xs text-emerald-800 mt-0.5";
+          } else {
+            votersList = MOCK_DATA;
+            isLiveBackend = false;
+            statusText.innerText = "Error parsing Google Sheet payload. Reverted to Local Demo Database.";
+            statusText.className = "text-xs text-rose-700 mt-0.5";
+          }
+        } catch (error) {
+          console.error("Fetch API error:", error);
+          votersList = MOCK_DATA;
+          isLiveBackend = false;
+          statusText.innerText = "Connection failed. Please crosscheck deployment configuration. Reverted to Local Demo Database.";
+          statusText.className = "text-xs text-rose-700 mt-0.5";
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        votersList = MOCK_DATA;
+        isLiveBackend = false;
+        statusText.innerText = "Using offline sample demonstration database. Connect a Google Sheets API URL above to link your spreadsheet.";
+        statusText.className = "text-xs text-amber-700 mt-0.5";
+      }
+
+      computeStats();
+      renderAddressGroups();
+    }
+
+    // Force Database Sync
+    function syncData() {
+      loadData();
+    }
+
+    // Compute Registry Counts
+    function computeStats() {
+      document.getElementById('stat-total-voters').innerText = votersList.length;
+      
+      // Extract unique address length
+      const uniqueAddresses = new Set();
+      votersList.forEach(v => {
+        if (v.address) uniqueAddresses.add(v.address.trim().toLowerCase());
+      });
+      document.getElementById('stat-total-addresses').innerText = uniqueAddresses.size;
+    }
+
+    // Grouping Engine: Voters by Address
+    function renderAddressGroups() {
+      const parentGrid = document.getElementById('address-groups-grid');
+      parentGrid.innerHTML = ""; // Clear existing grid
+
+      if (votersList.length === 0) {
+        parentGrid.innerHTML = `
+          <div class="col-span-full text-center py-10 bg-slate-50 border border-slate-200 border-dashed rounded-xl text-slate-400 text-sm">
+            No entries found.
+          </div>
+        `;
+        return;
+      }
+
+      // Populate associative map
+      const groups = {};
+      votersList.forEach(voter => {
+        const addr = voter.address || "Unspecified Address";
+        if (!groups[addr]) {
+          groups[addr] = [];
+        }
+        groups[addr].push(voter);
+      });
+
+      // Render cards
+      Object.keys(groups).forEach(address => {
+        const voters = groups[address];
+        
+        const cardHtml = `
+          <div class="bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between gap-4 mb-4">
+                <span class="inline-flex items-center gap-1 text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold line-clamp-1 flex-1 leading-none">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-sky-600 shrink-0"></i> ${address}
+                </span>
+                <span class="bg-sky-50 text-sky-800 text-xs font-bold px-2 py-1 rounded-md shrink-0">
+                  ${voters.length} ${voters.length === 1 ? 'voter' : 'voters'}
+                </span>
+              </div>
+              
+              <ul class="divide-y divide-slate-50 mb-4 max-h-[160px] overflow-y-auto">
+                ${voters.map(v => `
+                  <li class="py-2 flex items-center justify-between text-xs hover:bg-slate-50/50 px-2 rounded-md transition-all group">
+                    <div class="overflow-hidden pr-2">
+                      <p class="font-bold text-slate-900 leading-normal truncate">${v.fullName}</p>
+                      <p class="text-[10px] text-slate-400 mt-0.5 truncate">F: ${v.fatherName || "N/A"}</p>
+                    </div>
+                    <button onclick="selectVoterFromGrid('${v.voterId}')" 
+                            class="text-[10px] text-sky-600 font-bold border border-slate-200 group-hover:border-sky-300 group-hover:bg-sky-50 px-2 py-1 rounded-md transition-all shrink-0">
+                      View details
+                    </button>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+        parentGrid.insertAdjacentHTML('beforeend', cardHtml);
+      });
+
+      // Refresh custom icons
+      lucide.createIcons();
+    }
+
+    // Grid selection triggers detail card layout
+    function selectVoterFromGrid(voterId) {
+      const match = votersList.find(v => v.voterId.toLowerCase() === voterId.toLowerCase());
+      if (match) {
+        document.getElementById('search-input').value = match.fullName;
+        displayVoterCard(match);
+        document.getElementById('suggestions-box').classList.add('hidden');
+        window.scrollTo({ top: 150, behavior: 'smooth' });
+      }
+    }
+
+    // Handler for Search Suggestion Box toggling
+    function handleSearchInput() {
+      const input = document.getElementById('search-input');
+      const val = input.value.trim().toLowerCase();
+      const clearBtn = document.getElementById('clear-search-btn');
+      
+      if (val) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+        clearSearch();
+        return;
+      }
+
+      // Query Filter suggestions (Partial matches on ID or Full Name)
+      const suggestions = votersList.filter(v => 
+        (v.voterId || "").toLowerCase().includes(val) || 
+        (v.fullName || "").toLowerCase().includes(val)
+      ).slice(0, 5); // limit output count to 5
+
+      const suggestionsBox = document.getElementById('suggestions-box');
+      const suggestionsList = document.getElementById('suggestions-list');
+      
+      if (suggestions.length > 0) {
+        suggestionsBox.classList.remove('hidden');
+        suggestionsList.innerHTML = suggestions.map(v => `
+          <li onclick="selectVoterSuggestion('${v.voterId}')" 
+              class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between text-xs md:text-sm">
+            <div class="flex items-center gap-2">
+              <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+              <span class="font-semibold text-slate-800">${v.fullName}</span>
+            </div>
+            <span class="font-mono bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+              ${v.voterId}
+            </span>
+          </li>
+        `).join('');
+        lucide.createIcons();
+      } else {
+        suggestionsBox.classList.add('hidden');
+      }
+
+      // Instantly evaluate match if query perfectly matches ID or Name
+      evaluateDirectMatch(val);
+    }
+
+    // Check on inputs
+    function evaluateDirectMatch(query) {
+      const exactMatch = votersList.find(v => 
+        v.voterId.toLowerCase() === query || 
+        v.fullName.toLowerCase() === query
+      );
+
+      const errorAlert = document.getElementById('search-error-alert');
+      
+      if (exactMatch) {
+        displayVoterCard(exactMatch);
+        errorAlert.classList.add('hidden');
+      } else {
+        // If they matching characters with zero suggestions, fire voter absent alert
+        const matchesCount = votersList.filter(v => 
+          (v.voterId || "").toLowerCase().includes(query) || 
+          (v.fullName || "").toLowerCase().includes(query)
+        ).length;
+
+        if (matchesCount === 0 && query.length >= 3) {
+          errorAlert.classList.remove('hidden');
+          document.getElementById('search-result-container').classList.add('hidden');
+        } else {
+          errorAlert.classList.add('hidden');
+        }
+      }
+    }
+
+    // Clicked one suggestion
+    function selectVoterSuggestion(voterId) {
+      const match = votersList.find(v => v.voterId.toLowerCase() === voterId.toLowerCase());
+      if (match) {
+        document.getElementById('search-input').value = match.fullName;
+        displayVoterCard(match);
+        document.getElementById('suggestions-box').classList.add('hidden');
+      }
+    }
+
+    function handleSearchFocus() {
+      const input = document.getElementById('search-input');
+      if (input.value.trim().length > 0) {
+        handleSearchInput();
+      }
+    }
+
+    // Dismiss suggestions on outside click
+    document.addEventListener('click', (e) => {
+      const suggestionsBox = document.getElementById('suggestions-box');
+      const searchInput = document.getElementById('search-input');
+      if (e.target !== suggestionsBox && e.target !== searchInput) {
+        suggestionsBox.classList.add('hidden');
+      }
+    });
+
+    // Display Voter complete Card Details
+    function displayVoterCard(voter) {
+      document.getElementById('search-result-container').classList.remove('hidden');
+      document.getElementById('search-error-alert').classList.add('hidden');
+      
+      document.getElementById('card-fullname').innerText = voter.fullName || "N/A";
+      document.getElementById('card-voter-id').innerText = voter.voterId || "N/A";
+      document.getElementById('card-father').innerText = voter.fatherName || "N/A";
+      document.getElementById('card-mother').innerText = voter.motherName || "N/A";
+      document.getElementById('card-dob').innerText = voter.dateOfBirth || "N/A";
+      document.getElementById('card-mobile').innerText = voter.mobileNumber || "Not Provided";
+      document.getElementById('card-address').innerText = voter.address || "N/A";
+    }
+
+    // Dismiss Search View and reset
+    function clearSearch() {
+      document.getElementById('search-input').value = "";
+      document.getElementById('clear-search-btn').classList.add('hidden');
+      document.getElementById('suggestions-box').classList.add('hidden');
+      document.getElementById('search-result-container').classList.add('hidden');
+      document.getElementById('search-error-alert').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
