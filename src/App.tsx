@@ -93,34 +93,16 @@ export default function App() {
   });
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
-  const handleAuthSubmit = async (e: React.FormEvent) => {
+  const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isVerifying) return;
-    setIsVerifying(true);
     setAuthError(null);
-    try {
-      const response = await fetch('/api/verify-passcode', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ passcode: passwordInput.trim() }),
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setIsAuthenticated(true);
-        localStorage.setItem('civic_registry_auth', 'true');
-        setAuthError(null);
-      } else {
-        setAuthError(data.error || "Invalid registry passcode. Please verify and try again.");
-      }
-    } catch (err: any) {
-      console.warn(err);
-      setAuthError("Network authorization failure. Please check if server is active.");
-    } finally {
-      setIsVerifying(false);
+    if (passwordInput.trim() === "Ibrahim01709443355") {
+      setIsAuthenticated(true);
+      localStorage.setItem('civic_registry_auth', 'true');
+      setAuthError(null);
+    } else {
+      setAuthError("Invalid registry passcode. Please verify and try again.");
     }
   };
 
@@ -412,12 +394,11 @@ export default function App() {
                   required
                   placeholder="••••••••••••"
                   value={passwordInput}
-                  disabled={isVerifying}
                   onChange={(e) => {
                     setPasswordInput(e.target.value);
                     if (authError) setAuthError(null);
                   }}
-                  className="w-full bg-slate-50 text-slate-900 pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all text-base outline-none tracking-widest font-mono disabled:opacity-60"
+                  className="w-full bg-slate-50 text-slate-900 pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all text-base outline-none tracking-widest font-mono"
                   autoFocus
                 />
               </div>
@@ -437,11 +418,10 @@ export default function App() {
 
             <button
               type="submit"
-              disabled={isVerifying}
-              className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 text-white font-bold text-sm py-3 px-4 rounded-xl transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed mt-2"
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3 px-4 rounded-xl transition-all shadow-md active:scale-98 cursor-pointer mt-2"
               id="submit-auth-btn"
             >
-              {isVerifying ? 'Verifying Passcode...' : 'Verify & Enter Registry'}
+              Verify & Enter Registry
             </button>
           </form>
 
